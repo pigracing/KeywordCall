@@ -1,0 +1,28 @@
+[KeywordCall]
+enable = true
+
+[KeywordCall.keywords]
+
+[KeywordCall.keywords."#help"]
+open_ai_api_url = "https://api.openai.com/v1/chat/completions"
+api-key =  "sk-cxxcxxxxxxx"
+open_ai_model =  "gpt-4o"
+prompt = "你是一个有用的助手"
+image_regex = ""
+is_translate = false
+
+[KeywordCall.keywords."#gpt"]
+open_ai_api_url = "https://api.openai.com/v1/chat/completions"
+api-key =  "sk-cxxcxxxxxxx"
+open_ai_model =  "gpt-4o"
+prompt = "你是一个优秀的图片生成专家，你负责根据客户的要求生成图片"
+image_regex = "https://[^\\s\\)]+?\\.png"
+is_translate = false
+
+[KeywordCall.keywords."#query"]
+open_ai_api_url = "https://api.openai.com/v1/chat/completions"
+api-key =  "sk-cxxcxxxxxxx"
+open_ai_model =  "gpt-4o"
+prompt = "你是一个数据总结专家"
+image_regex = ""
+is_translate = false
