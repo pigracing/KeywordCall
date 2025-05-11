@@ -19,5 +19,5 @@ image_regex = "https://[^\\s\\)]+?\\.png"     提取图片的正则表达式
 输入#query+内容
 
 <div align="center">
-<img width="700" src="./docs/1746972108648.jpg">
+<img width="700" src="./doc/1746972108648.jpg">
 </div>
