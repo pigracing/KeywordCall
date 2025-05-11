@@ -1,0 +1,2 @@
+# KeywordCall
+适配xxxbot-pad版本的KeywordCall，支持配置关键字进行不同API的调用，兼容OpenAI格式的API接口
