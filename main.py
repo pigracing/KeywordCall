@@ -25,7 +25,7 @@ class ModelConfig:
 class KeywordCall(PluginBase):
     description = "关键字调用"
     author = "pigracing"
-    version = "1.0.0"
+    version = "1.0.1"
 
     def __init__(self):
         super().__init__()
@@ -71,8 +71,9 @@ class KeywordCall(PluginBase):
         content = message["Content"]
         content = content[len(matched_name):].strip()
         logger.debug("处理内容: " + content)
+        _config = self.keywords[matched_name]
         try:
-            out_message = await self.call_openai_api(self.keywords[matched_name], [{"role": "user", "content": content}])
+            out_message = await self.call_openai_api(_config, [{"role":"system","content":_config.prompt},{"role": "user", "content": content}])
             logger.debug("返回内容: " + out_message)
             if self.is_image_url(out_message):
                 # 如果返回的是图片链接，直接发送
