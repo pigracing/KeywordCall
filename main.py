@@ -25,7 +25,7 @@ class ModelConfig:
 class KeywordCall(PluginBase):
     description = "关键字调用"
     author = "pigracing"
-    version = "1.0.1"
+    version = "1.0.2"
 
     def __init__(self):
         super().__init__()
@@ -74,12 +74,16 @@ class KeywordCall(PluginBase):
         _config = self.keywords[matched_name]
         try:
             out_message = await self.call_openai_api(_config, [{"role":"system","content":_config.prompt},{"role": "user", "content": content}])
-            logger.debug("返回内容: " + out_message)
+            logger.debug("返回内容: " + out_message[:200])
             if self.is_image_url(out_message):
                 # 如果返回的是图片链接，直接发送
                 base64_str = await self.image_url_to_base64(out_message)
                 logger.debug("图片链接转换为base64: " + base64_str[:100])
                 await bot.send_image_message(message["FromWxid"], base64_str)
+            elif out_message.startswith("data:image"):
+                str_arr = out_message.split(",")
+                logger.debug("图片链接转换为base64: " + str_arr[1][:100])
+                await bot.send_image_message(message["FromWxid"], str_arr[1])
             else:  
                 # 如果返回的是文本，直接发送
                 await bot.send_text_message(message["FromWxid"], out_message)
@@ -104,12 +108,10 @@ class KeywordCall(PluginBase):
 
         try:
             async with aiohttp.ClientSession() as session:
-                async with session.post(url, json=payload, headers=headers) as response:
+                async with session.post(url, json=payload, headers=headers, timeout=10*60) as response:
                     response_text = await response.text()
-
                     if response.status != 200:
                         raise RuntimeError(f"OpenAI API 请求失败: {response.status} - {response_text}")
-
                     try:
                         data = json.loads(response_text)
                     except json.JSONDecodeError:
