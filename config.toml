@@ -16,12 +16,14 @@ open_ai_api_url = "https://api.openai.com/v1"
 api-key =  "sk-cxxcxxxxxxx"
 open_ai_model =  "gpt-4o"
 prompt = "你是一个优秀的图片生成专家，你负责根据客户的要求生成图片"
+response_type = "image"
 image_regex = "https://[^\\s\\)]+?\\.png"
 is_translate = false
 
 [KeywordCall.keywords."#query"]
 open_ai_api_url = "https://api.openai.com/v1"
 api-key =  "sk-cxxcxxxxxxx"
+call_type = "cmd"
 open_ai_model =  "gpt-4o"
 prompt = "你是一个数据总结专家"
 image_regex = ""
