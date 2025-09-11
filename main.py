@@ -62,6 +62,27 @@ class KeywordCall(PluginBase):
             if text.startswith(_keyword):
                 return _keyword
         return None
+    
+    async def response_msg(self,bot: WechatAPIClient, message: dict,response_type: str,out_message:str):
+        if response_type == 'image' or response_type == 'gemini':
+            if self.is_image_url(out_message):
+                # 如果返回的是图片链接，直接发送
+                base64_str = await self.image_url_to_base64(out_message)
+                logger.debug("图片链接转换为base64: " + base64_str[:100])
+                await bot.send_image_message(message["FromWxid"], base64_str)
+            elif out_message.startswith("data:image"):
+                str_arr = out_message.split(",")
+                logger.debug("图片链接转换为base64: " + str_arr[1][:100])
+                await bot.send_image_message(message["FromWxid"], str_arr[1])
+            else:
+                await bot.send_text_message(message["FromWxid"], out_message)
+        elif response_type == 'video':
+            base64_str = await self.image_url_to_base64(out_message)
+            # 发送视频消息
+            await bot.send_video_message(message["FromWxid"], base64_str)
+        else:  
+            # 如果返回的是文本，直接发送
+            await bot.send_text_message(message["FromWxid"], out_message)
 
     @on_text_message
     async def handle_text(self, bot: WechatAPIClient, message: dict):
@@ -79,35 +100,20 @@ class KeywordCall(PluginBase):
         content = content[len(matched_name):].strip()
         logger.debug("处理内容: " + content)
         _config = self.keywords[matched_name]
-        out_messages = []
+        out_message = ""
         try:
-            if _config.call_type == "openai":
-                out_messages = await self.call_openai_api(_config, [{"role":"system","content":_config.prompt},{"role": "user", "content": content}])
-            else:
-                out_messages = await self.execute_curl_command(_config, [{"role":"system","content":_config.prompt},{"role": "user", "content": content}])
-            logger.debug("返回内容: " + out_messages[0][:200])
             response_type = _config.response_type
-            for out_message in out_messages:
-                if response_type == 'image' or response_type == 'gemini':
-                    
-                    if self.is_image_url(out_message):
-                        # 如果返回的是图片链接，直接发送
-                        base64_str = await self.image_url_to_base64(out_message)
-                        logger.debug("图片链接转换为base64: " + base64_str[:100])
-                        await bot.send_image_message(message["FromWxid"], base64_str)
-                    elif out_message.startswith("data:image"):
-                        str_arr = out_message.split(",")
-                        logger.debug("图片链接转换为base64: " + str_arr[1][:100])
-                        await bot.send_image_message(message["FromWxid"], str_arr[1])
-                    else:
-                        await bot.send_text_message(message["FromWxid"], out_message)
-                elif response_type == 'video':
-                    base64_str = await self.image_url_to_base64(out_message)
-                    # 发送视频消息
-                    await bot.send_video_message(message["FromWxid"], base64_str)
-                else:  
-                    # 如果返回的是文本，直接发送
-                    await bot.send_text_message(message["FromWxid"], out_message)
+            if _config.call_type == "openai":
+                out_message = await self.call_openai_api(_config, [{"role":"system","content":_config.prompt},{"role": "user", "content": content}])
+            else:
+                out_message = await self.execute_curl_command(_config, [{"role":"system","content":_config.prompt},{"role": "user", "content": content}])
+            if type(out_message) is list:
+                for per_message in out_message:
+                    logger.debug("返回内容: " + per_message[:200])
+                    await self.response_msg(bot,message,response_type,per_message)
+            else:
+                logger.debug("返回内容: " + out_message[:200])
+                await self.response_msg(bot,message,response_type,out_message)
         except Exception as e:
             logger.error(f"处理消息失败: {e}")
             await bot.send_text_message(message["FromWxid"], "处理消息失败，请稍后再试。")
@@ -187,10 +193,10 @@ class KeywordCall(PluginBase):
                 # 使用正则提取（如配置了 image_regex）
                 if config.image_regex:
                     matches = re.findall(config.image_regex, text)
-                    return matches
-                    #if matches:
-                    #    return "\n".join(matches)
-                return [text]
+                    if matches:
+                        return matches
+                            # return "\n".join(matches)
+                return text
             except json.JSONDecodeError:
                 print("响应不是有效的 JSON 格式，返回原始文本。")
                 return response_body
@@ -242,10 +248,11 @@ class KeywordCall(PluginBase):
                     # 使用正则提取（如配置了 image_regex）
                     if config.image_regex:
                         matches = re.findall(config.image_regex, text)
-                        #if matches:
-                        #    return "\n".join(matches)
-                        return matches
-                    return [text]
+                        if matches:
+                            return matches
+                            # return "\n".join(matches)
+
+                    return text
         except Exception as e:
             logger.error(f"调用 OpenAI API 失败: {e}")
             return "调用 OpenAI API 失败，请稍后再试。"
